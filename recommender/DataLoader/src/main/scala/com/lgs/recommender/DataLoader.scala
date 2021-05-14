@@ -1,4 +1,4 @@
-package com.atguigu.recommender
+package com.lgs.recommender
 
 import java.net.InetAddress
 
@@ -13,15 +13,6 @@ import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.InetSocketTransportAddress
 import org.elasticsearch.transport.client.PreBuiltTransportClient
 
-/**
-  * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved 
-  *
-  * Project: MovieRecommendSystem
-  * Package: com.atguigu.recommender
-  * Version: 1.0
-  *
-  * Created by wushengran on 2019/4/1 15:51
-  */
 
 /**
   * Movie 数据集
@@ -76,9 +67,9 @@ case class ESConfig(httpHosts:String, transportHosts:String, index:String, clust
 object DataLoader {
 
   // 定义常量
-  val MOVIE_DATA_PATH = "D:\\Projects\\BigData\\MovieRecommendSystem\\recommender\\DataLoader\\src\\main\\resources\\movies.csv"
-  val RATING_DATA_PATH = "D:\\Projects\\BigData\\MovieRecommendSystem\\recommender\\DataLoader\\src\\main\\resources\\ratings.csv"
-  val TAG_DATA_PATH = "D:\\Projects\\BigData\\MovieRecommendSystem\\recommender\\DataLoader\\src\\main\\resources\\tags.csv"
+  val MOVIE_DATA_PATH = "recommender/DataLoader/src/main/resources/movies.csv"
+  val RATING_DATA_PATH = "recommender/DataLoader/src/main/resources/ratings.csv"
+  val TAG_DATA_PATH = "recommender/DataLoader/src/main/resources/tags.csv"
 
   val MONGODB_MOVIE_COLLECTION = "Movie"
   val MONGODB_RATING_COLLECTION = "Rating"
@@ -89,11 +80,11 @@ object DataLoader {
 
     val config = Map(
       "spark.cores" -> "local[*]",
-      "mongo.uri" -> "mongodb://localhost:27017/recommender",
-      "mongo.db" -> "recommender",
-      "es.httpHosts" -> "localhost:9200",
-      "es.transportHosts" -> "localhost:9300",
-      "es.index" -> "recommender",
+      "mongo.uri" -> "mongodb://localhost:27017/recommended",
+      "mongo.db" -> "recommended",
+      "es.httpHosts" -> "linux:9200",
+      "es.transportHosts" -> "linux:9300",
+      "es.index" -> "recommended",
       "es.cluster.name" -> "elasticsearch"
     )
 
@@ -226,6 +217,8 @@ object DataLoader {
     movieDF.write
       .option("es.nodes", eSConfig.httpHosts)
       .option("es.http.timeout", "100m")
+      .option("es.max.retries", "2")
+      .option("es.nodes.wan.only", "true")
       .option("es.mapping.id", "mid")
       .mode("overwrite")
       .format("org.elasticsearch.spark.sql")

@@ -1,4 +1,4 @@
-package com.atguigu.streaming
+package com.lgs.streaming
 
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
@@ -10,20 +10,11 @@ import org.apache.spark.streaming.kafka010.{ConsumerStrategies, KafkaUtils, Loca
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import redis.clients.jedis.Jedis
 
-/**
-  * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved 
-  *
-  * Project: MovieRecommendSystem
-  * Package: com.atguigu.streaming
-  * Version: 1.0
-  *
-  * Created by wushengran on 2019/4/3 10:26
-  */
 
 // 定义连接助手对象，序列化
 object ConnHelper extends Serializable{
   lazy val jedis = new Jedis("localhost")
-  lazy val mongoClient = MongoClient( MongoClientURI("mongodb://localhost:27017/recommender") )
+  lazy val mongoClient = MongoClient( MongoClientURI("mongodb://localhost:27017/recommended") )
 }
 
 case class MongoConfig(uri:String, db:String)
@@ -48,9 +39,9 @@ object StreamingRecommender {
   def main(args: Array[String]): Unit = {
     val config = Map(
       "spark.cores" -> "local[*]",
-      "mongo.uri" -> "mongodb://localhost:27017/recommender",
-      "mongo.db" -> "recommender",
-      "kafka.topic" -> "recommender"
+      "mongo.uri" -> "mongodb://localhost:27017/recommended",
+      "mongo.db" -> "recommended",
+      "kafka.topic" -> "recommended"
     )
 
     val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("StreamingRecommender")
@@ -82,10 +73,10 @@ object StreamingRecommender {
 
     // 定义kafka连接参数
     val kafkaParam = Map(
-      "bootstrap.servers" -> "localhost:9092",
+      "bootstrap.servers" -> "linux:9092",
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
-      "group.id" -> "recommender",
+      "group.id" -> "recommended",
       "auto.offset.reset" -> "latest"
     )
     // 通过kafka创建一个DStream

@@ -1,28 +1,19 @@
-package com.atguigu.offline
+package com.lgs.offline
 
 import breeze.numerics.sqrt
-import com.atguigu.offline.OfflineRecommender.MONGODB_RATING_COLLECTION
+import OfflineRecommender.MONGODB_RATING_COLLECTION
 import org.apache.spark.SparkConf
 import org.apache.spark.mllib.recommendation.{ALS, MatrixFactorizationModel, Rating}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-/**
-  * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved 
-  *
-  * Project: MovieRecommendSystem
-  * Package: com.atguigu.offline
-  * Version: 1.0
-  *
-  * Created by wushengran on 2019/4/3 8:51
-  */
 
 object ALSTrainer {
   def main(args: Array[String]): Unit = {
     val config = Map(
       "spark.cores" -> "local[*]",
-      "mongo.uri" -> "mongodb://localhost:27017/recommender",
-      "mongo.db" -> "recommender"
+      "mongo.uri" -> "mongodb://localhost:27017/recommended",
+      "mongo.db" -> "recommended"
     )
 
     val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("OfflineRecommender")
@@ -42,7 +33,7 @@ object ALSTrainer {
       .load()
       .as[MovieRating]
       .rdd
-      .map( rating => Rating( rating.uid, rating.mid, rating.score ) )    // 转化成rdd，并且去掉时间戳
+      .map(rating => Rating(rating.uid, rating.mid, rating.score)) // 转化成rdd，并且去掉时间戳
       .cache()
 
     // 随机切分数据集，生成训练集和测试集
@@ -56,13 +47,13 @@ object ALSTrainer {
     spark.close()
   }
 
-  def adjustALSParam(trainData: RDD[Rating], testData: RDD[Rating]): Unit ={
-    val result = for( rank <- Array(50, 100, 200, 300); lambda <- Array( 0.01, 0.1, 1 ))
+  def adjustALSParam(trainData: RDD[Rating], testData: RDD[Rating]): Unit = {
+    val result = for (rank <- Array(50, 100, 200, 300); lambda <- Array(0.01, 0.1, 1))
       yield {
         val model = ALS.train(trainData, rank, 5, lambda)
         // 计算当前参数对应模型的rmse，返回Double
-        val rmse = getRMSE( model, testData )
-        ( rank, lambda, rmse )
+        val rmse = getRMSE(model, testData)
+        (rank, lambda, rmse)
       }
     // 控制台打印输出最优参数
     println(result.minBy(_._3))
@@ -74,12 +65,12 @@ object ALSTrainer {
     val predictRating = model.predict(userProducts)
 
     // 以uid，mid作为外键，inner join实际观测值和预测值
-    val observed = data.map( item => ( (item.user, item.product), item.rating ) )
-    val predict = predictRating.map( item => ( (item.user, item.product), item.rating ) )
+    val observed = data.map(item => ((item.user, item.product), item.rating))
+    val predict = predictRating.map(item => ((item.user, item.product), item.rating))
     // 内连接得到(uid, mid),(actual, predict)
     sqrt(
-      observed.join(predict).map{
-        case ( (uid, mid), (actual, pre) ) =>
+      observed.join(predict).map {
+        case ((uid, mid), (actual, pre)) =>
           val err = actual - pre
           err * err
       }.mean()
